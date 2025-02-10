@@ -99,14 +99,11 @@ func RemoveElement(slice Puzzles, idx int) (Puzzle, Puzzles) {
 
 type NoSolution struct{}
 
-func (ns NoSolution) Error() string {
+func (ns *NoSolution) Error() string {
 	return "No Solution"
 }
 
-func AStar(puzzle Puzzle, h Heuristic) (SolvedPuzzle, error) {
-	genCount := 0
-	expCount := 0
-
+func AStar(puzzle Puzzle, h Heuristic, depthLimit int) (SolvedPuzzle, error) {
 	puzzle.h = h(&puzzle)
 
 	openList := Puzzles{puzzle}
@@ -115,24 +112,27 @@ func AStar(puzzle Puzzle, h Heuristic) (SolvedPuzzle, error) {
 	var currentPuzzle Puzzle
 
 	for len(openList) > 0 {
-		//fmt.Println(len(openList))
+		if len(closedList)+len(openList) > depthLimit {
+			break
+		}
+		// Sorts the openList by the f() value so that the item at the start has the lowest f()
 		sort.Sort(openList)
 
+		// Pops the first element off the openList
 		currentPuzzle, openList = RemoveElement(openList, 0)
-		//fmt.Println(currentPuzzle.f())
 		if currentPuzzle.h == 0 { // Check if goal state has been reached
 			return SolvedPuzzle{
 				Puzzle:         currentPuzzle,
-				expandedNodes:  expCount,
-				generatedNodes: genCount,
+				expandedNodes:  len(closedList),
+				generatedNodes: len(openList) + len(closedList),
 			}, nil
 		}
 
-		// Expand the current best puzzle
+		// Adds the current node aka, the node currently being expanded, to the closed list
 		closedList = append(closedList, currentPuzzle)
+		// Expand the current best puzzle, and if they are not in the closedList, add them to the openList
 		for _, neighbor := range GenerateNodes(currentPuzzle, h) {
 			res := neighbor.In(&closedList)
-			//fmt.Println(res)
 			if !res {
 				openList = append(openList, neighbor)
 			}
@@ -140,10 +140,8 @@ func AStar(puzzle Puzzle, h Heuristic) (SolvedPuzzle, error) {
 	}
 
 	return SolvedPuzzle{
-		Puzzle:         currentPuzzle,
-		expandedNodes:  expCount,
-		generatedNodes: genCount,
-	}, NoSolution{}
+		Puzzle: Puzzle{},
+	}, &NoSolution{}
 }
 
 func PrintResults(sp *SolvedPuzzle) {

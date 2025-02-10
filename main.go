@@ -44,12 +44,16 @@ func main() {
 	file, _ := os.Open("puzzles.txt")
 	puzzles, _ := ReadConfig(file)
 
-	for _, puzzle := range puzzles {
-		ans, err := AStar(puzzle, ManhattanDistance)
+	depthLimit := 10000
+
+	for idx, puzzle := range puzzles {
+		ans, err := AStar(puzzle, ManhattanDistance, depthLimit)
+		fmt.Printf("Puzzle #%v\n", idx+1)
 		if err == nil {
 			PrintResults(&ans)
+			fmt.Println()
 		} else {
-			fmt.Println(err)
+			fmt.Printf("No Solution Found\n\n")
 		}
 	}
 }
