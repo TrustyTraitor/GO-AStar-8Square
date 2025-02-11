@@ -1,13 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"math"
 	"sort"
 )
 
+// Heuristic - A type alias for easier reading and writing
 type Heuristic = func(*Puzzle) int
 
+// LocateNumber - Finds a number in a multidimensional array and returns it's indices
 func LocateNumber(arr *[3][3]int, val int) (int, int) {
 	for idx, i := range arr {
 		for jdx, j := range i {
@@ -19,6 +20,7 @@ func LocateNumber(arr *[3][3]int, val int) (int, int) {
 	return -1, -1
 }
 
+// ManhattanDistance - A heuristic function for the A* cost evaluation
 func ManhattanDistance(puzzle *Puzzle) int {
 	cost := 0
 
@@ -35,6 +37,22 @@ func ManhattanDistance(puzzle *Puzzle) int {
 	return cost
 }
 
+// MisplacedTiles - A heuristic function for the A* cost evaluation
+func MisplacedTiles(puzzle *Puzzle) int {
+	cost := 0
+
+	for idx, i := range puzzle.current {
+		for jdx, j := range i {
+			if j != puzzle.goal[idx][jdx] {
+				cost++
+			}
+		}
+	}
+
+	return cost
+}
+
+// GenerateNodes - Creates and returns the nodes that can be generated from a given state.
 func GenerateNodes(puzzle Puzzle, h Heuristic) Puzzles {
 	// Gets the indices for the valid swaps to generate children nodes
 	GenValidSwaps := func(r, c int) [][2]int {
@@ -90,6 +108,7 @@ func GenerateNodes(puzzle Puzzle, h Heuristic) Puzzles {
 	return nodes
 }
 
+// RemoveElement - Removes an element from a slice and returns it.
 func RemoveElement(slice Puzzles, idx int) (Puzzle, Puzzles) {
 	popped := slice[idx]
 	slice = append(slice[:idx], slice[idx+1:]...)
@@ -97,12 +116,16 @@ func RemoveElement(slice Puzzles, idx int) (Puzzle, Puzzles) {
 	return popped, slice
 }
 
+// NoSolution - A custom error type returned when no solution is found.
 type NoSolution struct{}
 
+// Error - Implements the 'error' interface on the NoSolution type
 func (ns *NoSolution) Error() string {
 	return "No Solution"
 }
 
+// AStar - Implements A* algorithm. Takes in a heuristic function and a depth limit. Returns a SolvedPuzzle type and error.
+// Error will be nil if no error occurs. Otherwise, returns a NoSolution
 func AStar(puzzle Puzzle, h Heuristic, depthLimit int) (SolvedPuzzle, error) {
 	puzzle.h = h(&puzzle)
 
@@ -142,11 +165,4 @@ func AStar(puzzle Puzzle, h Heuristic, depthLimit int) (SolvedPuzzle, error) {
 	return SolvedPuzzle{
 		Puzzle: Puzzle{},
 	}, &NoSolution{}
-}
-
-func PrintResults(sp *SolvedPuzzle) {
-	sp.TracePath()
-	fmt.Printf("Nodes Generated: %v\n", sp.generatedNodes)
-	fmt.Printf(" Nodes Expanded: %v\n", sp.expandedNodes)
-
 }
